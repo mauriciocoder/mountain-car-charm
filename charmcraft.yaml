@@ -8,14 +8,23 @@ title: Mountain Car Charm
 
 # (Required)
 summary: |
-  This implementation solves the Mountain Car control problem using the Episodic Semi-gradient Sarsa algorithm for estimating an action-value function. For a complete explanation of the problem, refer to the full article [here](https://drive.google.com/file/d/11xdhJ3PMVRHd0J13kKXUp5fLwiSwRlCh/view?usp=sharing).
+  Mountain Car simulation workload using Reinforcement Learning
 
 
 # (Required)
 description: |
-  The Mountain Car task presents an underpowered car that must leverage momentum to reach a goal at the top of a steep incline. Due to gravitational constraints, the car cannot reach the goal by direct acceleration but must first backtrack and build up sufficient momentum. This classic example of continuous control highlights the complexity of tasks where states may need to worsen temporarily to achieve an ultimate goal.
+  The Mountain Car task presents an underpowered car that must leverage momentum to reach a goal at the top of a steep incline. 
+  Due to gravitational constraints, the car cannot reach the goal by direct acceleration but must first backtrack and build up 
+  sufficient momentum. This classic example of continuous control highlights the complexity of tasks where states may need 
+  to worsen temporarily to achieve an ultimate goal.
 
-  The car has three available actions: full throttle forward (+1), full throttle reverse (-1), and no throttle (0). Physics for position (xt) and velocity (ẋt) are simplified, with constraints on the range of position (1.2 ≥ xt+1 ≥ -0.5) and velocity (0.07 ≥ ẋt+1 ≥ -0.07). If the car reaches the left boundary, the velocity is reset to zero; reaching the right boundary ends the episode. Each episode starts from a random position within the range [-0.6, -0.4) and zero initial velocity.
+  The car has three available actions: full throttle forward (+1), full throttle reverse (-1), and no throttle (0). 
+  Physics for position (xt) and velocity (ẋt) are simplified, with constraints on the range of position (1.2 ≥ xt+1 ≥ -0.5) 
+  and velocity (0.07 ≥ ẋt+1 ≥ -0.07). If the car reaches the left boundary, the velocity is reset to zero; 
+  reaching the right boundary ends the episode. Each episode starts from a random position within the range [-0.6, -0.4)
+  and zero initial velocity.
+  
+  For a complete discussion of the problem, see: https://drive.google.com/file/d/11xdhJ3PMVRHd0J13kKXUp5fLwiSwRlCh/view
 
 
 # (Required)
@@ -63,7 +72,6 @@ config:
         Acceptable values are: "info", "debug", "warning", "error" and "critical"
       default: "info"
       type: string
-
 # Charm custom actions
 actions:
   simulation:
@@ -84,6 +92,12 @@ actions:
          and the results. The list of mean trajectory sizes, represented by `trajectory_sizes_mean`, is saved 
          here, allowing each trajectory size to correspond to a particular training session.
 
+      To execute the simulation action in background, run the following command:
+      ```
+      juju run mountain-car-charm/* simulation feature-type=NRB alpha-list='["0.025"]' 
+      gamma-list='["0.95"]' epsilon-list='["0.5"]' polynomial-dimension-list='["1"]' 
+      protos-per-dimension-list='["8"]' training-sessions=10 simulations=100 --background
+      ```
     params:
       feature-type:
         type: string
@@ -126,4 +140,5 @@ actions:
     - feature-type
     additionalProperties: false
   getdbsecret:
-    description: Retrieves the database configuration secret. It is a dictionary with fields `dbname`, `dbhost`, `dbuser`, `dbpassword`, and `dbport`. If the secret is unavailable, the action fails with the message `"Config file not found"`.
+    description: Retrieves the database configuration secret. It is a dictionary with fields `dbname`, `dbhost`, `dbuser`, `dbpassword`, and `dbport`. 
+      If the secret is unavailable, the action fails with the message `"Config file not found"`.
