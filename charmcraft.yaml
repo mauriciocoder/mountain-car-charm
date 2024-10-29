@@ -1,0 +1,113 @@
+# This file configures Charmcraft.
+# See https://juju.is/docs/sdk/charmcraft-config for guidance.
+
+# (Required)
+name: mountain-car-charm
+# (Recommended)
+title: Mountain Car Charm
+
+# (Required)
+summary: |
+  This implementation solves the Mountain Car control problem using the Episodic Semi-gradient Sarsa algorithm for estimating an action-value function. For more details, refer to the full article [here](https://drive.google.com/file/d/11xdhJ3PMVRHd0J13kKXUp5fLwiSwRlCh/view?usp=sharing).
+
+
+# (Required)
+description: |
+  The Mountain Car task presents an underpowered car that must leverage momentum to reach a goal at the top of a steep incline. Due to gravitational constraints, the car cannot reach the goal by direct acceleration but must first backtrack and build up sufficient momentum. This classic example of continuous control highlights the complexity of tasks where states may need to worsen temporarily to achieve an ultimate improvement.
+
+  The reward is 1 at every time step until the car reaches its goal position, which terminates the episode. The car has three available actions: full throttle forward (+1), full throttle reverse (-1), and no throttle (0). Physics for position (xt) and velocity (ẋt) are simplified, with constraints on the range of position (1.2 ≥ xt+1 ≥ -0.5) and velocity (0.07 ≥ ẋt+1 ≥ -0.07). If the car reaches the left boundary, the velocity is reset to zero; reaching the right boundary ends the episode. Each episode starts from a random position within the range [-0.6, -0.4) and zero initial velocity.
+
+
+# (Required)
+type: charm
+
+# (Required for 'charm' type)
+bases:
+  - build-on:
+    - name: ubuntu
+      channel: "22.04"
+    run-on:
+    - name: ubuntu
+      channel: "22.04"
+
+
+# Installed libpq5 because psycopg3 requires it to build from source
+# using psycopg3-binary also requires this dependencies(!)
+# Check: https://juju.is/docs/sdk/change-step-behavior-in-a-charm
+# parts:
+#   charm:
+#     override-build: |
+#       echo "This overrides the charm pack"
+#       apt install -y libpq5
+#       craftctl default
+
+# This relates the charm to the database
+# when executed: $juju integrate mountain-car-charm mysql
+# will trigger the self.on.database_relation_changed (Some other hooks will be called too)
+requires:
+  database:
+    interface: mysql
+
+# (Optional) Configuration options for the charm
+# This config section defines charm config options, and populates the Configure
+# tab on Charmhub.
+# More information on this section at https://juju.is/docs/sdk/charmcraft-yaml#heading--config
+# General configuration documentation: https://juju.is/docs/sdk/config
+config:
+  options:
+    # An example config option to customise the log level of the workload
+    log-level:
+      description: |
+        Configures the log level of gunicorn.
+
+        Acceptable values are: "info", "debug", "warning", "error" and "critical"
+      default: "info"
+      type: string
+
+# Charm custom actions
+actions:
+  simulation:
+    description: Run the mountain car simulation
+    params:
+      feature-type:
+        type: string
+        description: Feature selection method (POLYNOMIAL for polynomial features or NRB for Radial Basis Function).
+        enum:
+          - POLYNOMIAL
+          - NRB
+      alpha-list:
+        type: array
+        items:
+          type: string
+        description: A list of alpha values used for training.
+      gamma-list:
+        type: array
+        items:
+          type: string
+        description: A list of gamma values used for training.
+      epsilon-list:
+        type: array
+        items:
+          type: string
+        description: A list of epsilon values used for training.
+      polynomial-dimension-list:
+        type: array
+        items:
+          type: string
+        description: A list of polynomial dimension values used for training.
+      protos-per-dimension-list:
+        type: array
+        items:
+          type: string
+        description: A list of proto points used for training.
+      training-sessions:
+        type: integer
+        description: Number of training sessions to be applied to the model.
+      simulations:
+        type: integer
+        description: Number of simulations to be executed.
+    required:
+    - feature-type
+    additionalProperties: false
+  getdbsecret:
+    description: Get the database secret
