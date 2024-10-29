@@ -8,14 +8,14 @@ title: Mountain Car Charm
 
 # (Required)
 summary: |
-  This implementation solves the Mountain Car control problem using the Episodic Semi-gradient Sarsa algorithm for estimating an action-value function. For more details, refer to the full article [here](https://drive.google.com/file/d/11xdhJ3PMVRHd0J13kKXUp5fLwiSwRlCh/view?usp=sharing).
+  This implementation solves the Mountain Car control problem using the Episodic Semi-gradient Sarsa algorithm for estimating an action-value function. For a complete explanation of the problem, refer to the full article [here](https://drive.google.com/file/d/11xdhJ3PMVRHd0J13kKXUp5fLwiSwRlCh/view?usp=sharing).
 
 
 # (Required)
 description: |
-  The Mountain Car task presents an underpowered car that must leverage momentum to reach a goal at the top of a steep incline. Due to gravitational constraints, the car cannot reach the goal by direct acceleration but must first backtrack and build up sufficient momentum. This classic example of continuous control highlights the complexity of tasks where states may need to worsen temporarily to achieve an ultimate improvement.
+  The Mountain Car task presents an underpowered car that must leverage momentum to reach a goal at the top of a steep incline. Due to gravitational constraints, the car cannot reach the goal by direct acceleration but must first backtrack and build up sufficient momentum. This classic example of continuous control highlights the complexity of tasks where states may need to worsen temporarily to achieve an ultimate goal.
 
-  The reward is 1 at every time step until the car reaches its goal position, which terminates the episode. The car has three available actions: full throttle forward (+1), full throttle reverse (-1), and no throttle (0). Physics for position (xt) and velocity (ẋt) are simplified, with constraints on the range of position (1.2 ≥ xt+1 ≥ -0.5) and velocity (0.07 ≥ ẋt+1 ≥ -0.07). If the car reaches the left boundary, the velocity is reset to zero; reaching the right boundary ends the episode. Each episode starts from a random position within the range [-0.6, -0.4) and zero initial velocity.
+  The car has three available actions: full throttle forward (+1), full throttle reverse (-1), and no throttle (0). Physics for position (xt) and velocity (ẋt) are simplified, with constraints on the range of position (1.2 ≥ xt+1 ≥ -0.5) and velocity (0.07 ≥ ẋt+1 ≥ -0.07). If the car reaches the left boundary, the velocity is reset to zero; reaching the right boundary ends the episode. Each episode starts from a random position within the range [-0.6, -0.4) and zero initial velocity.
 
 
 # (Required)
@@ -67,11 +67,27 @@ config:
 # Charm custom actions
 actions:
   simulation:
-    description: Run the mountain car simulation
+    description: |
+      Train models based on the combination of parameters passed in. Simulate the models 
+      and persist the trajectory sizes obtained for each combination in the following MySQL model structured across two primary tables: 
+      `training_definition` and `training_result`.
+
+      1. `training_definition` Table: This table logs the parameters defining each training session, 
+         such as the unit identifier (`unit_id`), feature type (`feature_type`), and various training 
+         parameters (`alpha`, `gamma`, `epsilon`, `polynomial_dimension`, `protos_per_dimension`, 
+         `training_sessions`, and `simulations`). Each record in this table represents a unique 
+         training configuration, and each entry is assigned a unique identifier (`training_definition_id`).
+
+      2. `training_result` Table: This table captures the actual mean trajectory sizes (`trajectory_size`) 
+         obtained from the training session. Each result is linked to a specific `training_definition_id` 
+         from the `training_definition` table, establishing a relationship between the training parameters 
+         and the results. The list of mean trajectory sizes, represented by `trajectory_sizes_mean`, is saved 
+         here, allowing each trajectory size to correspond to a particular training session.
+
     params:
       feature-type:
         type: string
-        description: Feature selection method (POLYNOMIAL for polynomial features or NRB for Radial Basis Function).
+        description: Feature selection method (`POLYNOMIAL` for polynomial features or `NRB` for Radial Basis Function).
         enum:
           - POLYNOMIAL
           - NRB
@@ -79,35 +95,35 @@ actions:
         type: array
         items:
           type: string
-        description: A list of alpha values used for training.
+        description: Learning rates for training sessions. Values should be between 0.01 and 0.5.
       gamma-list:
         type: array
         items:
           type: string
-        description: A list of gamma values used for training.
+        description: Discount factors for the reward. Values should be between 0.8 and 1.0.
       epsilon-list:
         type: array
         items:
           type: string
-        description: A list of epsilon values used for training.
+        description: Exploration parameters for epsilon-greedy strategy. Values should be between 0.25 and 0.75.
       polynomial-dimension-list:
         type: array
         items:
           type: string
-        description: A list of polynomial dimension values used for training.
+        description: A list of polynomial dimensions if `feature-type` is `POLYNOMIAL`. Values can be between 2 and 10.
       protos-per-dimension-list:
         type: array
         items:
           type: string
-        description: A list of proto points used for training.
+        description: Number of proto points per dimension if feature-type is `NRB`. Values can be between 8 and 52.
       training-sessions:
         type: integer
-        description: Number of training sessions to be applied to the model.
+        description: Number of training sessions used to train the models.
       simulations:
         type: integer
-        description: Number of simulations to be executed.
+        description: Number of simulations to be executed for each training session.
     required:
     - feature-type
     additionalProperties: false
   getdbsecret:
-    description: Get the database secret
+    description: Retrieves the database configuration secret. It is a dictionary with fields `dbname`, `dbhost`, `dbuser`, `dbpassword`, and `dbport`. If the secret is unavailable, the action fails with the message `"Config file not found"`.
